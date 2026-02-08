@@ -40,6 +40,13 @@ public class Wallet {
 
     //retirar dinero si existe saldo suficiente
     public void withdraw(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("amount must be greater " +
+                    "than 0");
+        }
+        if (this.balance < amount) {
+            throw new IllegalStateException("insufficient funds");
+        }
         this.balance -= amount;
     }
 }

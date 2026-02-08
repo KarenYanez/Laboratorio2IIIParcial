@@ -128,4 +128,91 @@ public class WalletServiceTest {
         assertEquals(ownerEmail, savedWallet.getOwnerEmail());
     }
 
+    @Test
+    void withdraw_successful_shouldUpdateBalanceAndSave() {
+        // ARRANGE
+        String walletId = "wallet-123";
+        String ownerEmail = "karen@espe.edu.ec";
+        double initialBalance = 1000.0;
+        double withdrawAmount = 300.0;
+        
+        Wallet wallet = new Wallet(ownerEmail, initialBalance);
+        when(walletRepository.findbyId(walletId)).thenReturn(Optional.of(wallet));
+        ArgumentCaptor<Wallet> walletCaptor = ArgumentCaptor.forClass(Wallet.class);
+        
+        // ACT
+        double updatedBalance = walletService.withdraw(walletId, withdrawAmount);
+        
+        // ASSERT
+        assertEquals(initialBalance - withdrawAmount, updatedBalance);
+        
+        // VERIFY
+        verify(walletRepository).save(walletCaptor.capture());
+        Wallet savedWallet = walletCaptor.getValue();
+        assertEquals(initialBalance - withdrawAmount, savedWallet.getBalance());
+        assertEquals(ownerEmail, savedWallet.getOwnerEmail());
+    }
+    @Test
+    void withdraw_insufficientFunds_shouldThrow() {
+        // ARRANGE
+        String walletId = "wallet-123";
+        String ownerEmail = "karen@espe.edu.ec";
+        double initialBalance = 100.0;
+        double withdrawAmount = 200.0; // Mayor al balance
+        
+        Wallet wallet = new Wallet(ownerEmail, initialBalance);
+        when(walletRepository.findbyId(walletId)).thenReturn(Optional.of(wallet));
+        
+        // ACT + ASSERT
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> walletService.withdraw(walletId, withdrawAmount)
+        );
+        
+        assertEquals("insufficient funds", exception.getMessage());
+        
+        // VERIFY (no se guarda nada)
+        verify(walletRepository, times(1)).findbyId(walletId);
+        verify(walletRepository, never()).save(any());
+    }
+
+    @Test
+    void withdraw_walletNotFound_shouldThrow() {
+        // ARRANGE
+        String walletId = "nonexistent-wallet";
+        double withdrawAmount = 100.0;
+        
+        when(walletRepository.findbyId(walletId)).thenReturn(Optional.empty());
+        
+        // ACT + ASSERT
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> walletService.withdraw(walletId, withdrawAmount)
+        );
+        
+        assertEquals("wallet not found", exception.getMessage());
+        
+        // VERIFY
+        verify(walletRepository, times(1)).findbyId(walletId);
+        verify(walletRepository, never()).save(any());
+    }
+
+    @Test
+    void withdraw_invalidAmount_shouldThrow() {
+        // ARRANGE
+        String walletId = "wallet-123";
+        double invalidAmount = -50.0; // Monto inválido
+        
+        // ACT + ASSERT
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> walletService.withdraw(walletId, invalidAmount)
+        );
+        
+        assertEquals("amount must be greater than 0", exception.getMessage());
+        
+        // VERIFY (no se llama a dependencias)
+        verifyNoInteractions(walletRepository);
+    }
+
 }

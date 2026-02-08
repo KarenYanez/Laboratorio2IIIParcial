@@ -72,4 +72,25 @@ public class WalletService {
         //  Retornar balance actualizado
         return wallet.getBalance();
     }
+
+    //retirar dinero
+    public double withdraw(String walletId, double amount) {
+        // i. amount > 0
+        if (amount <= 0) {
+            throw new IllegalArgumentException("amount must be greater " +
+                    "than 0");
+        }
+
+        // ii. wallet debe existir
+        Wallet wallet = walletRepository.findbyId(walletId)
+                .orElseThrow(() -> new IllegalStateException("wallet not found"));
+
+        // iii. saldo suficiente (validación en el model)
+        wallet.withdraw(amount);
+
+        // iv. actualizar saldo y guardar
+        walletRepository.save(wallet);
+
+        return wallet.getBalance();
+    }
 }
