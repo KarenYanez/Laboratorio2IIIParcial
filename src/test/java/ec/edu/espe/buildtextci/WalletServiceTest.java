@@ -204,6 +204,7 @@ public class WalletServiceTest {
         double invalidAmount = -50.0; // Monto inválido
         
         // ACT + ASSERT
+        // ACT + ASSERT
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> walletService.withdraw(walletId, invalidAmount)
